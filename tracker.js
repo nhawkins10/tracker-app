@@ -23,6 +23,9 @@ $(document).ready(function() {
 var Tracker = (function() {
 	return {
 		
+		/**
+		 * The currrently set date. Defaults to today.
+		 */
 		date: {
 			"year": new Date().getFullYear(),
 			"month": new Date().getMonth(),
@@ -204,6 +207,11 @@ var Tracker = (function() {
 					Tracker.ui.highlightDay();
 				},
 				
+				/**
+				 * Displays icons in the calendar cells.
+				 *
+				 * @return - none
+				 */
 				populateIcons: function() {
 					var day = "";
 					for (item in Tracker.data.dataStorage) {
@@ -242,6 +250,11 @@ var Tracker = (function() {
 					}
 				},
 				
+				/**
+				 * Displays the icons in the viewer area for the currently set date.
+				 *
+				 * @return - none
+				 */
 				populateViewer: function() {
 					var dateString = Tracker.date.year + "-" + (Tracker.date.month > 9 ? Tracker.date.month : "0" + Tracker.date.month) + "-" + (Tracker.date.day > 9 ? Tracker.date.day : "0" + Tracker.date.day);
 					var itemList = (Tracker.data.dataStorage[dateString] == undefined ? [] : Tracker.data.dataStorage[dateString]);
