@@ -2,6 +2,8 @@ $(document).ready(function() {
 	Tracker.ui.registerClickHandlers();
 	
 	Tracker.ui.populateCalendar(Tracker.data.generateCalendar());
+	Tracker.ui.populateIcons();
+	Tracker.ui.populateViewer();
 	Tracker.ui.displayMonth();
 });
 
@@ -21,25 +23,82 @@ $(document).ready(function() {
 var Tracker = (function() {
 	return {
 		
+		date: {
+			"year": new Date().getFullYear(),
+			"month": new Date().getMonth(),
+			"day": new Date().getDate()
+		},
+		
 		/**
 		 * This class contains all the functionality relating to the manipulation
 		 *  and processing of the data. No DOM manipulation takes place in this class.
 		 */
 		data: (function() {
 			
+			var dataStorage = {
+				"2016-05-28": [3,4],
+				"2016-06-08": [0, 1, 2, 3, 4, 5],
+				"2016-06-10": [2,4,5],
+				"2016-06-14": [3],
+				"2016-06-12": [0,2],
+				"2016-06-28": [2,3,4,5],
+				"2016-06-26": [1,2,3,4,5]
+			};
+			
+			var categories = {
+				"current": [
+				
+				],
+				"all": [
+					{
+						id: 0,
+						color: "red",
+						name: "Hiking",
+						icon: "compass-icon.png"
+					},
+					{
+						id: 1,
+						color: "blue",
+						name: "Music",
+						icon: "audio-icon.png"
+					},
+					{
+						id: 2,
+						color: "orange",
+						name: "Shop",
+						icon: "basket-icon.png"
+					},
+					{
+						id: 3,
+						color: "green",
+						name: "Workout",
+						icon: "check-icon.png"
+					},
+					{
+						id: 4,
+						color: "brown",
+						name: "Drink Coffee",
+						icon: "mug-icon.png"
+					},
+					{
+						id: 5,
+						color: "purple",
+						name: "Charge Phone",
+						icon: "lightning-icon.png"
+					}
+				]
+			};
+			
 			/**
 			 *	Determines if the given date is a leap year. If no date is given 
 			 *	it defaults to the current year.
 			 *
-			 * @param date - the date to check
 			 * @return {boolean} - true/false indicating if the year is a leap year
 			 */
-			function isLeapYear(date) {
-				var now = date || new Date();
-
-				if (now.getYear() % 100 === 0 && now.getYear() % 400 === 0) {
+			function isLeapYear() {
+				if (Tracker.date.year % 100 === 0 && Tracker.date.year % 400 === 0) {
 					return true;
-				} else if (now.getYear() % 4 === 0) {
+				} else if (Tracker.date.year % 4 === 0) {
 					return true;
 				} else {
 					return false;
@@ -47,20 +106,18 @@ var Tracker = (function() {
 			}
 			
 			return {
+				dataStorage: dataStorage,
+				categories: categories,
 				
 				/** 
 				 *	Generates an array representing the calender for the 
 				 * given year and month. If no year or month are given it 
 				 * defaults to the current year or month. 
 				 *
-				 * @param yearParam - the given year
-				 * @param monthParam - the given month
 				 * @return {Array} - a two dimentional array representing the month
 				 */
-				generateCalendar: function(yearParam, monthParam) {
-					var year = yearParam || new Date().getFullYear(),
-						  month = monthParam || new Date().getMonth(),
-						  monthStart = new Date(year, month, 1);
+				generateCalendar: function() {
+					var monthStart = new Date(Tracker.date.year, Tracker.date.month, 1);
 					var lengths = {
 						"0": 31,
 						"1": (isLeapYear() ? 29 : 28),
@@ -90,7 +147,7 @@ var Tracker = (function() {
 							if (weekCounter === 0 && dayOfWeekCounter < monthStart.getDay()) {
 								continue;
 							}
-							if (counter <= lengths[month]) {
+							if (counter <= lengths[Tracker.date.month]) {
 								monthArray[weekCounter][dayOfWeekCounter] = counter;
 								counter++
 							}
@@ -98,6 +155,14 @@ var Tracker = (function() {
 					}
 					
 					return monthArray;
+				},
+				
+				setDate: function(dateString) {
+					var dateArray = dateString.split("-");
+					
+					Tracker.date.year = parseInt(dateArray[0], 10);
+					Tracker.date.month = parseInt(dateArray[1], 10);
+					Tracker.date.day = parseInt(dateArray[2], 10);
 				}
 			}
 		})(),
@@ -116,50 +181,115 @@ var Tracker = (function() {
 				 * given monthArray and highlights the given day.
 				 *
 				 * @param monthArray - the calendar data to display
-				 * @param dayParam - the day to highlight, defaults to today if none is given
 				 * @return - none
 				 */
-				populateCalendar: function(monthArray, dayParam) {
-					var day = dayParam || new Date().getDate();
+				populateCalendar: function(monthArray) {
+					var dateString = "";
+					
 					for (var weekCounter=0; weekCounter<monthArray.length; weekCounter++) {
 						for (var dayOfWeekCounter=0; dayOfWeekCounter<monthArray[0].length; dayOfWeekCounter++) {
 							//populate the day numbers
 							if (monthArray[weekCounter][dayOfWeekCounter] > 0) {
 								$("#" + weekCounter + dayOfWeekCounter + " .date").text(monthArray[weekCounter][dayOfWeekCounter]);
+								dateString = Tracker.date.year + "-" + 
+												 (Tracker.date.month > 9 ? Tracker.date.month : "0" + Tracker.date.month) + "-" + 
+												 (monthArray[weekCounter][dayOfWeekCounter] > 9 ? monthArray[weekCounter][dayOfWeekCounter] : "0" + monthArray[weekCounter][dayOfWeekCounter]);
+								$("#" + weekCounter + dayOfWeekCounter).attr("data-date", dateString);
 							} else {
 								$("#" + weekCounter + dayOfWeekCounter + " .date").text("");
 							}
 						}
 					}
 					
-					Tracker.ui.highlightDay(day);
+					Tracker.ui.highlightDay();
+				},
+				
+				populateIcons: function() {
+					var day = "";
+					for (item in Tracker.data.dataStorage) {
+						if (item.indexOf(Tracker.date.year + "-" + (Tracker.date.month > 9 ? Tracker.date.month : "0" + Tracker.date.month)) > -1) {
+							var itemList = Tracker.data.dataStorage[item].sort(),
+								  day = item.split("-")[2],
+								  id = 0;
+							
+							//find ID of calendar day
+							for (var weekCounter=0; weekCounter<6; weekCounter++) {
+								for (var dayOfWeekCounter=0; dayOfWeekCounter<7; dayOfWeekCounter++) {
+									if (parseInt(day) === parseInt($("#" + weekCounter + dayOfWeekCounter + " .date").text())) {
+										id = $("#" + weekCounter + dayOfWeekCounter).attr("id");
+										break;
+									}
+								}
+							}
+							
+							//display icons on day
+							var categories = Tracker.data.categories.all;
+							
+							for (var i=0; i<itemList.length; i++) {
+								$("#" + id).append("<img src='img/" + categories[itemList[i]].icon + "' class='icon' />");
+								
+								if (itemList.length == 3 && i == 0) {
+									$("#" + id).append("<br>");
+								} else if (itemList.length == 4 && i == 1) {
+									$("#" + id).append("<br>");
+								} else if (itemList.length == 5 && i == 1) {
+									$("#" + id).append("<br>");
+								} else if (itemList.length == 6 && i == 2) {
+									$("#" + id).append("<br>");
+								}
+							}
+						}
+					}
+				},
+				
+				populateViewer: function() {
+					var dateString = Tracker.date.year + "-" + (Tracker.date.month > 9 ? Tracker.date.month : "0" + Tracker.date.month) + "-" + (Tracker.date.day > 9 ? Tracker.date.day : "0" + Tracker.date.day);
+					var itemList = (Tracker.data.dataStorage[dateString] == undefined ? [] : Tracker.data.dataStorage[dateString]);
+					
+					$(".viewer").html("");
+					
+					for (var i=0; i<itemList.length; i++) {
+						$(".viewer").append(
+							"<span class='tracker-item'>" + 
+								"<span class='tracker-icon-container'>" + 
+									"<img class='tracker-icon' src='img/" + Tracker.data.categories.all[itemList[i]].icon + "' />" +
+								"</span>" +
+								"<span class='tracker-title'>" + Tracker.data.categories.all[itemList[i]].name + "</span>" +
+							"</span>"
+						);
+						
+						if (itemList.length == 3 && i == 0) {
+							$(".viewer").append("<br>");
+						} else if (itemList.length == 4 && i == 1) {
+							$(".viewer").append("<br>");
+						} else if (itemList.length == 5 && i == 1) {
+							$(".viewer").append("<br>");
+						} else if (itemList.length == 6 && i == 2) {
+							$(".viewer").append("<br>");
+						}
+					}
 				},
 				
 				/**
 				 * Displays the given month in the title bar.
-				 * Defaults to the current month if none is given.
 				 *
-				 * @param monthIdParam - the zero based ID of the month
 				 * @return - none
 				 */
-				displayMonth: function(monthIdParam) {
-					var monthId = monthIdParam || new Date().getMonth();
-					$(".title").text(monthNames[monthId]);
+				displayMonth: function() {
+					$(".title").text(monthNames[Tracker.data.month]);
 				},
 				
 				/**
-				 * Highlights the given day on the calendar. Defaults
-				 * to the current day if none is given.
+				 * Highlights the current day on the calendar. 
 				 * 
-				 * @param dayParam - the day to highlight
 				 * @return - none
 				 */
-				highlightDay: function(dayParam) {
-					var day = dayParam || new Date().getDate();
-					
+				highlightDay: function() {
+					var tempDate = 0;
 					for (var weekCounter=0; weekCounter<6; weekCounter++) {
 						for (var dayOfWeekCounter=0; dayOfWeekCounter<7; dayOfWeekCounter++) {
-							if (parseInt(day) === parseInt($("#" + weekCounter + dayOfWeekCounter + " .date").text())) {
+							tempDate = ($("#" + weekCounter + dayOfWeekCounter + " .date").text() == "" ? 0 : parseInt($("#" + weekCounter + dayOfWeekCounter + " .date").text()));
+							if (parseInt(Tracker.date.day) === tempDate) {
 								$("#" + weekCounter + dayOfWeekCounter).addClass("highlight");
 							} else {
 								$("#" + weekCounter + dayOfWeekCounter).removeClass("highlight");
@@ -191,7 +321,9 @@ var Tracker = (function() {
 				 */
 				registerClickHandlers: function() {
 					$(".calendar td").on("click", function() {
+						Tracker.data.setDate($(this).attr("data-date"));
 						Tracker.ui.highlightDay($(this).text());
+						Tracker.ui.populateViewer();
 					});
 					
 					$(".tracker-item").on("click", function() {
