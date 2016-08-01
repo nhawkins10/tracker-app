@@ -1,10 +1,7 @@
 $(document).ready(function() {
-	Tracker.ui.registerClickHandlers();
+	Tracker.ui.refreshScreen();
 	
-	Tracker.ui.populateCalendar(Tracker.data.generateCalendar());
-	Tracker.ui.populateIcons();
-	Tracker.ui.populateViewer();
-	Tracker.ui.displayMonth();
+	Tracker.ui.registerClickHandlers();
 });
 
 /******************************************************************/
@@ -15,6 +12,8 @@ $(document).ready(function() {
 /**	 https://nhawkins10.github.io/tracker-app/													**/
 /**																												**/
 /**	 All icons courtesy of IconMonstr www.iconmonstr.com									**/
+/**	 Swipe detection from:																				**/
+/**	 	http://www.javascriptkit.com/javatutors/touchevents2.shtml						**/
 /**	 																											**/
 /**	 Created by: Nathan Hawkins																		**/
 /**	 Date: July 2016																						**/
@@ -45,13 +44,12 @@ var Tracker = (function() {
 				"2016-06-14": [3],
 				"2016-06-12": [0,2],
 				"2016-06-28": [2,3,4,5],
-				"2016-06-26": [1,2,3,4,5]
+				"2016-06-26": [1,2,3,4,5],
+				"2016-07-01": [2]
 			};
 			
 			var categories = {
-				"current": [
-				
-				],
+				"current": [1, 2, 4],
 				"all": [
 					{
 						id: 0,
@@ -166,6 +164,36 @@ var Tracker = (function() {
 					Tracker.date.year = parseInt(dateArray[0], 10);
 					Tracker.date.month = parseInt(dateArray[1], 10);
 					Tracker.date.day = parseInt(dateArray[2], 10);
+				},
+				
+				incrementMonth: function() {
+					if (Tracker.date.month == 11) {
+						Tracker.date.month = 0;
+						Tracker.date.year++;
+					} else {
+						Tracker.date.month++;
+					}
+					
+					if (Tracker.date.month == new Date().getDate()) {
+						Tracker.date.day = new Date().getDate();
+					} else {
+						Tracker.date.day = 1;
+					}
+				},
+				
+				decrementMonth: function() {
+					if (Tracker.date.month == 0) {
+						Tracker.date.month = 11;
+						Tracker.date.year--;
+					} else {
+						Tracker.date.month--;
+					}
+					
+					if (Tracker.date.month == new Date().getDate()) {
+						Tracker.date.day = new Date().getDate();
+					} else {
+						Tracker.date.day = 1;
+					}
 				}
 			}
 		})(),
@@ -180,7 +208,19 @@ var Tracker = (function() {
 			return {
 				
 				/**
-				 * Populates the calendar UI with data from the 
+				 * Repaints the screen with the most currently set date.
+				 *
+				 * @return - none
+				 */
+				refreshScreen: function() {
+					Tracker.ui.populateCalendar(Tracker.data.generateCalendar());
+					Tracker.ui.populateIcons();
+					Tracker.ui.populateViewer();
+					Tracker.ui.displayMonth();
+				},
+				
+				/**
+				 * Populates the calendar UI with day number data from the 
 				 * given monthArray and highlights the given day.
 				 *
 				 * @param monthArray - the calendar data to display
@@ -214,6 +254,7 @@ var Tracker = (function() {
 				 */
 				populateIcons: function() {
 					var day = "";
+					$(".calendar-icons-container").html("");
 					for (item in Tracker.data.dataStorage) {
 						if (item.indexOf(Tracker.date.year + "-" + (Tracker.date.month > 9 ? Tracker.date.month : "0" + Tracker.date.month)) > -1) {
 							var itemList = Tracker.data.dataStorage[item].sort(),
@@ -234,16 +275,16 @@ var Tracker = (function() {
 							var categories = Tracker.data.categories.all;
 							
 							for (var i=0; i<itemList.length; i++) {
-								$("#" + id).append("<img src='img/" + categories[itemList[i]].icon + "' class='icon' />");
+								$("#" + id + " .calendar-icons-container").append("<img src='img/" + categories[itemList[i]].icon + "' class='icon' />");
 								
 								if (itemList.length == 3 && i == 0) {
-									$("#" + id).append("<br>");
+									$("#" + id + " .calendar-icons-container").append("<br>");
 								} else if (itemList.length == 4 && i == 1) {
-									$("#" + id).append("<br>");
+									$("#" + id + " .calendar-icons-container").append("<br>");
 								} else if (itemList.length == 5 && i == 1) {
-									$("#" + id).append("<br>");
+									$("#" + id + " .calendar-icons-container").append("<br>");
 								} else if (itemList.length == 6 && i == 2) {
-									$("#" + id).append("<br>");
+									$("#" + id + " .calendar-icons-container").append("<br>");
 								}
 							}
 						}
@@ -257,28 +298,71 @@ var Tracker = (function() {
 				 */
 				populateViewer: function() {
 					var dateString = Tracker.date.year + "-" + (Tracker.date.month > 9 ? Tracker.date.month : "0" + Tracker.date.month) + "-" + (Tracker.date.day > 9 ? Tracker.date.day : "0" + Tracker.date.day);
+					var today = new Date();
+					var todayString = today.getFullYear() + "-" + (today.getMonth() > 9 ? today.getMonth() : "0" + today.getMonth()) + "-" + (today.getDate() > 9 ? today.getDate() : "0" + today.getDate());
+					
 					var itemList = (Tracker.data.dataStorage[dateString] == undefined ? [] : Tracker.data.dataStorage[dateString]);
 					
 					$(".viewer").html("");
 					
-					for (var i=0; i<itemList.length; i++) {
-						$(".viewer").append(
-							"<span class='tracker-item'>" + 
-								"<span class='tracker-icon-container'>" + 
-									"<img class='tracker-icon' src='img/" + Tracker.data.categories.all[itemList[i]].icon + "' />" +
-								"</span>" +
-								"<span class='tracker-title'>" + Tracker.data.categories.all[itemList[i]].name + "</span>" +
-							"</span>"
-						);
-						
-						if (itemList.length == 3 && i == 0) {
-							$(".viewer").append("<br>");
-						} else if (itemList.length == 4 && i == 1) {
-							$(".viewer").append("<br>");
-						} else if (itemList.length == 5 && i == 1) {
-							$(".viewer").append("<br>");
-						} else if (itemList.length == 6 && i == 2) {
-							$(".viewer").append("<br>");
+					if (todayString == dateString) {
+						//populate viewer for current day
+						if (itemList.length == 0) {
+							$(".viewer").html("<div class='viewer-text secondary-text'>Nothing for today :)</div>");
+						} else {
+							var highlight = false;
+							for (var i=0; i<Tracker.data.categories.current.length; i++) {
+								if (itemList.indexOf(Tracker.data.categories.current[i]) > -1) {
+									highlight = true;
+								}
+								
+								$(".viewer").append(
+									"<span class='tracker-item'>" + 
+										"<span class='tracker-icon-container " + (highlight ? "grey-border grey-background" : "") + "'>" + 
+											"<img class='tracker-icon' src='img/" + Tracker.data.categories.all[Tracker.data.categories.current[i]].icon + "' />" +
+										"</span>" +
+										"<span class='tracker-title'>" + Tracker.data.categories.all[Tracker.data.categories.current[i]].name + "</span>" +
+									"</span>"
+								);
+								
+								if (Tracker.data.categories.current.length == 3 && i == 0) {
+									$(".viewer").append("<br>");
+								} else if (Tracker.data.categories.current.length == 4 && i == 1) {
+									$(".viewer").append("<br>");
+								} else if (Tracker.data.categories.current.length == 5 && i == 1) {
+									$(".viewer").append("<br>");
+								} else if (Tracker.data.categories.current.length == 6 && i == 2) {
+									$(".viewer").append("<br>");
+								}
+								
+								highlight = false;
+							}
+						}
+					} else {
+						//populate viewer for a past day
+						if (itemList.length == 0) {
+							$(".viewer").html("<div class='viewer-text secondary-text'>Nothing for this day :)</div>");
+						} else {
+							for (var i=0; i<itemList.length; i++) {
+								$(".viewer").append(
+									"<span class='tracker-item'>" + 
+										"<span class='tracker-icon-container grey-border grey-background'>" + 
+											"<img class='tracker-icon' src='img/" + Tracker.data.categories.all[itemList[i]].icon + "' />" +
+										"</span>" +
+										"<span class='tracker-title'>" + Tracker.data.categories.all[itemList[i]].name + "</span>" +
+									"</span>"
+								);
+								
+								if (itemList.length == 3 && i == 0) {
+									$(".viewer").append("<br>");
+								} else if (itemList.length == 4 && i == 1) {
+									$(".viewer").append("<br>");
+								} else if (itemList.length == 5 && i == 1) {
+									$(".viewer").append("<br>");
+								} else if (itemList.length == 6 && i == 2) {
+									$(".viewer").append("<br>");
+								}
+							}
 						}
 					}
 				},
@@ -289,7 +373,7 @@ var Tracker = (function() {
 				 * @return - none
 				 */
 				displayMonth: function() {
-					$(".title").text(monthNames[Tracker.data.month]);
+					$(".title").text(monthNames[Tracker.date.month]);
 				},
 				
 				/**
@@ -342,6 +426,70 @@ var Tracker = (function() {
 					$(".tracker-item").on("click", function() {
 						Tracker.ui.highlightItem(this);
 					});
+					
+					Tracker.ui.swipeDetect(document.getElementsByClassName("calendar")[0], function(swipeDir) {
+						if (swipeDir === "up") {
+							Tracker.data.incrementMonth();
+							Tracker.ui.refreshScreen();
+						} else if (swipeDir === "down") {
+							Tracker.data.decrementMonth();
+							Tracker.ui.refreshScreen();
+						}
+					});
+				},
+				
+				/**
+				* Detects swipes in the calendar and calls the given callback function
+				* with "up", "down", "left", "right", or "none" based on the direction of the swipe.
+				*
+				* @param el - the element to watch for touch events
+				* @param callback - the function to call when a valid swipe is detected
+				* @return - none
+				*/
+				swipeDetect: function(el, callback){
+					 var touchsurface = el,
+						swipedir,
+						startX,
+						startY,
+						distX,
+						distY,
+						threshold = 150, //required min distance traveled to be considered swipe
+						restraint = 100, // maximum distance allowed at the same time in perpendicular direction
+						allowedTime = 300, // maximum time allowed to travel that distance
+						elapsedTime,
+						startTime,
+						handleswipe = callback || function(swipedir){};
+				  
+					touchsurface.addEventListener('touchstart', function(e){
+						var touchobj = e.changedTouches[0]
+						swipedir = 'none'
+						dist = 0
+						startX = touchobj.pageX
+						startY = touchobj.pageY
+						startTime = new Date().getTime() // record time when finger first makes contact with surface
+					}, false)
+				  
+					touchsurface.addEventListener('touchmove', function(e){
+					}, false)
+				  
+					touchsurface.addEventListener('touchend', function(e){
+						var touchobj = e.changedTouches[0]
+						distX = touchobj.pageX - startX // get horizontal dist traveled by finger while in contact with surface
+						distY = touchobj.pageY - startY // get vertical dist traveled by finger while in contact with surface
+						elapsedTime = new Date().getTime() - startTime // get time elapsed
+						if (elapsedTime <= allowedTime){ // first condition for awipe met
+							if (Math.abs(distX) >= threshold && Math.abs(distY) <= restraint){ // 2nd condition for horizontal swipe met
+								swipedir = (distX < 0)? 'left' : 'right' // if dist traveled is negative, it indicates left swipe
+							}
+							else if (Math.abs(distY) >= threshold && Math.abs(distX) <= restraint){ // 2nd condition for vertical swipe met
+								swipedir = (distY < 0)? 'up' : 'down' // if dist traveled is negative, it indicates up swipe
+							}
+						}
+						handleswipe(swipedir);
+						if (swipedir != "none") {
+							e.preventDefault()
+						}
+					}, false)
 				}
 			}
 		})()

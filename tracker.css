@@ -24,6 +24,11 @@ body {
 	width: 100%;
 }
 
+.calendar td {
+	width: 51px;
+	height: 45px;
+}
+
 .calendar-header {
 	border-bottom: 1px solid #eee;
 }
@@ -52,6 +57,10 @@ body {
 .viewer {
 	padding: 10px 20px;
 	text-align: center;
+}
+
+.viewer-text {
+	line-height: 100px;
 }
 
 .tracker-item {
