@@ -1,7 +1,6 @@
 $(document).ready(function() {
+	Tracker.ui.registerSwipeEvents();
 	Tracker.ui.refreshScreen();
-	
-	Tracker.ui.registerClickHandlers();
 });
 
 /******************************************************************/
@@ -45,7 +44,8 @@ var Tracker = (function() {
 				"2016-06-12": [0,2],
 				"2016-06-28": [2,3,4,5],
 				"2016-06-26": [1,2,3,4,5],
-				"2016-07-01": [2]
+				"2016-07-01": [2],
+				"2016-07-04": [3, 5]
 			};
 			
 			var categories = {
@@ -174,7 +174,7 @@ var Tracker = (function() {
 						Tracker.date.month++;
 					}
 					
-					if (Tracker.date.month == new Date().getDate()) {
+					if (Tracker.date.month == new Date().getMonth()) {
 						Tracker.date.day = new Date().getDate();
 					} else {
 						Tracker.date.day = 1;
@@ -189,7 +189,7 @@ var Tracker = (function() {
 						Tracker.date.month--;
 					}
 					
-					if (Tracker.date.month == new Date().getDate()) {
+					if (Tracker.date.month == new Date().getMonth()) {
 						Tracker.date.day = new Date().getDate();
 					} else {
 						Tracker.date.day = 1;
@@ -229,6 +229,8 @@ var Tracker = (function() {
 				populateCalendar: function(monthArray) {
 					var dateString = "";
 					
+					$(".calendar td").off("click");
+					
 					for (var weekCounter=0; weekCounter<monthArray.length; weekCounter++) {
 						for (var dayOfWeekCounter=0; dayOfWeekCounter<monthArray[0].length; dayOfWeekCounter++) {
 							//populate the day numbers
@@ -243,6 +245,12 @@ var Tracker = (function() {
 							}
 						}
 					}
+					
+					$(".calendar td").on("click", function() {
+						Tracker.data.setDate($(this).attr("data-date"));
+						Tracker.ui.highlightDay($(this).text());
+						Tracker.ui.populateViewer();
+					});
 					
 					Tracker.ui.highlightDay();
 				},
@@ -302,6 +310,8 @@ var Tracker = (function() {
 					var todayString = today.getFullYear() + "-" + (today.getMonth() > 9 ? today.getMonth() : "0" + today.getMonth()) + "-" + (today.getDate() > 9 ? today.getDate() : "0" + today.getDate());
 					
 					var itemList = (Tracker.data.dataStorage[dateString] == undefined ? [] : Tracker.data.dataStorage[dateString]);
+					
+					$(".tracker-item").off("click");
 					
 					$(".viewer").html("");
 					
@@ -365,6 +375,12 @@ var Tracker = (function() {
 							}
 						}
 					}
+					
+					$(".tracker-item").on("click", function() {
+						if (new Date(Tracker.date.year, Tracker.date.month, Tracker.date.day).toDateString() == new Date().toDateString()) {
+							Tracker.ui.highlightItem(this);
+						}
+					});
 				},
 				
 				/**
@@ -413,21 +429,13 @@ var Tracker = (function() {
 				 * Registers click handlers for the application.
 				 * - click handler for calendar cells
 				 * - click handler for viewer items
+				 * - swipe up/down on calendar
 				 *
 				 * @return - none
 				 */
-				registerClickHandlers: function() {
-					$(".calendar td").on("click", function() {
-						Tracker.data.setDate($(this).attr("data-date"));
-						Tracker.ui.highlightDay($(this).text());
-						Tracker.ui.populateViewer();
-					});
-					
-					$(".tracker-item").on("click", function() {
-						Tracker.ui.highlightItem(this);
-					});
-					
-					Tracker.ui.swipeDetect(document.getElementsByClassName("calendar")[0], function(swipeDir) {
+				registerSwipeEvents: function() {
+					Tracker.ui.swipeDetect(function(swipeDir) {
+						console.log(swipeDir);
 						if (swipeDir === "up") {
 							Tracker.data.incrementMonth();
 							Tracker.ui.refreshScreen();
@@ -439,15 +447,28 @@ var Tracker = (function() {
 				},
 				
 				/**
+				 * Un-registers click handlers for the application.
+				 * - click handler for calendar cells
+				 * - click handler for viewer items
+				 * - swipe up/down on calendar
+				 *
+				 * @return - none
+				 */
+				unregisterSwipeEvents: function() {
+					$(".calendar").off("touchstart");
+					$(".calendar").off("touchmove");
+					$(".calendar").off("touchend");
+				},
+				
+				/**
 				* Detects swipes in the calendar and calls the given callback function
 				* with "up", "down", "left", "right", or "none" based on the direction of the swipe.
 				*
-				* @param el - the element to watch for touch events
 				* @param callback - the function to call when a valid swipe is detected
 				* @return - none
 				*/
-				swipeDetect: function(el, callback){
-					 var touchsurface = el,
+				swipeDetect: function( callback){
+					 var touchsurface = document.getElementsByClassName("calendar")[0],
 						swipedir,
 						startX,
 						startY,
