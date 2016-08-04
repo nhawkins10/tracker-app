@@ -10,7 +10,8 @@ $(document).ready(function() {
 /**	 a the history of when each event has taken place.										**/
 /**	 https://nhawkins10.github.io/tracker-app/													**/
 /**																												**/
-/**	 All icons courtesy of IconMonstr www.iconmonstr.com									**/
+/**	 All icons from IconMonstr 																			**/	
+/**	 	www.iconmonstr.com																			**/
 /**	 Swipe detection from:																				**/
 /**	 	http://www.javascriptkit.com/javatutors/touchevents2.shtml						**/
 /**	 																											**/
@@ -22,7 +23,7 @@ var Tracker = (function() {
 	return {
 		
 		/**
-		 * The currrently set date. Defaults to today.
+		 * The working date. Defaults to the current date.
 		 */
 		date: {
 			"year": new Date().getFullYear(),
@@ -45,7 +46,7 @@ var Tracker = (function() {
 				"2016-06-28": [2,3,4,5],
 				"2016-06-26": [1,2,3,4,5],
 				"2016-07-01": [2],
-				"2016-07-04": [3, 5]
+				"2016-07-04": [1,4]
 			};
 			
 			var categories = {
@@ -158,6 +159,12 @@ var Tracker = (function() {
 					return monthArray;
 				},
 				
+				/**
+				 * Parses the given date string and sets the working date.
+				 *
+				 * @param dateString - the date to set, in the format "YYYY-MM-DD"
+				 * @return none
+				 */
 				setDate: function(dateString) {
 					var dateArray = dateString.split("-");
 					
@@ -166,6 +173,14 @@ var Tracker = (function() {
 					Tracker.date.day = parseInt(dateArray[2], 10);
 				},
 				
+				/**
+				 * Increments the working month. If the working month is incremented 
+				 * to the current month the working day is also set to the current day.
+				 * Otherwise the working day defaults to the first.
+				 *
+				 * @param - none
+				 * @return none
+				 */
 				incrementMonth: function() {
 					if (Tracker.date.month == 11) {
 						Tracker.date.month = 0;
@@ -181,6 +196,14 @@ var Tracker = (function() {
 					}
 				},
 				
+				/**
+				 * Decrements the working month. If the working month is decremented 
+				 * to the current month the working day is also set to the current day.
+				 * Otherwise the working day defaults to the first.
+				 *
+				 * @param - none
+				 * @return none
+				 */
 				decrementMonth: function() {
 					if (Tracker.date.month == 0) {
 						Tracker.date.month = 11;
